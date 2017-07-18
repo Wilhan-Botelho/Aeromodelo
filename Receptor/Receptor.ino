@@ -12,7 +12,10 @@ Servo acelerador, aileron, leme, profundor;
 RF24 radio(7, 8); // CSN, CE
 const byte address[6] = "0A0A1";
 int vlrAcelerador = 0;
-int vlrAileron, vlrLeme, vlrProfundor = 90;
+int vlrAileron    = 90;
+int vlrLeme       = 90;
+int vlrProfundor  = 90;
+long tempoSemReceberComando       = 0;
 
 void setup() {
   //radio
@@ -31,6 +34,13 @@ void setup() {
   aileron.write(vlrAileron);
   leme.write(vlrLeme);
   profundor.write(vlrProfundor);
+}
+
+void reiniciaMedidas(){
+  executaAcelerador(70);
+  executaAileron(90);
+  executaLeme(90);
+  executaProfundor(90);
 }
 
 void executaAcelerador(int vlrTmp){
@@ -61,7 +71,7 @@ void executaProfundor(int vlrTmp){
   }
 }
 
-void processarDadosRecebidos(char dados[12]){
+void processarDadosRecebidos(char dados[25]){
   String str(dados);
   executaAcelerador( str.substring(0, 3).toInt() );
   executaAileron( str.substring(3, 6).toInt() );
@@ -71,9 +81,16 @@ void processarDadosRecebidos(char dados[12]){
 
 void loop() {
   if (radio.available()) {
-    char text[12] = "";
+    char text[25] = "";
     radio.read(&text, sizeof(text));
     processarDadosRecebidos(text);
+    tempoSemReceberComando = 0;
+  }
+  tempoSemReceberComando = tempoSemReceberComando + 100;
+
+  if(tempoSemReceberComando > 12000){
+    reiniciaMedidas();
+    tempoSemReceberComando = 0;
   }
   delay(100);
 }
